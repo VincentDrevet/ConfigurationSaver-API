@@ -26,5 +26,24 @@ namespace Repository
         {
             return _context.Credentials.Any(c => c.Id == id);
         }
+        public ICollection<Server> GetServersByCredentialId(Guid id)
+        {
+            return _context.Credentials.Where(c => c.Id == id).Select(c => c.Servers).First();
+        }
+
+        public Credential CreateCredential(Credential createCredential)
+        {
+            _context.Credentials.Add(createCredential);
+            _context.SaveChanges();
+            return createCredential;
+
+        }
+
+        public Credential UpdateCredential(Credential updateCredential)
+        {
+            _context.Credentials.Update(updateCredential);
+            _context.SaveChanges();
+            return updateCredential;
+        }
     }
 }

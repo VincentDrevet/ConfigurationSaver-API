@@ -2,6 +2,8 @@ using Models;
 using Interfaces;
 using Data;
 using AutoMapper;
+using Dto;
+using Microsoft.EntityFrameworkCore;
 
 namespace Repository
 {
@@ -27,6 +29,18 @@ namespace Repository
         public bool IsScheduleTaskExist(Guid id)
         {
             return _context.ScheduleTasks.Any(st => st.Id == id);
+        }
+
+        public ICollection<Server> GetServersInTask(Guid id)
+        {
+            return _context.ServerScheduleTasks.Where(sst => sst.ScheduleTaskId == id).Select(sst => sst.Server).ToList();
+        }
+
+        public ScheduleTask CreateScheduleTask(ScheduleTask createScheduleTask)
+        {
+            _context.ScheduleTasks.Add(createScheduleTask);
+            _context.SaveChanges();
+            return createScheduleTask;
         }
     }
 }

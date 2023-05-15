@@ -26,5 +26,17 @@ namespace Repository
         {
             return _context.Servers.Any(s => s.Id == id);
         }
+
+        public Credential GetCredentialByServerId(Guid id)
+        {
+            return _context.Servers.Where(s => s.Id == id).Select(s => s.Credential).First();
+        }
+
+        public Server CreateServer(Server server)
+        {
+            _context.Servers.Add(server);
+            _context.SaveChanges();
+            return server;
+        }
     }
 }
