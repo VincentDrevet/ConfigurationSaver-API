@@ -4,6 +4,7 @@ using AutoMapper;
 using Dto;
 using ConfigurationSaver_API.Dto;
 using Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Controllers
 {
@@ -75,7 +76,7 @@ namespace Controllers
         }
 
         [HttpPost, Route("")]
-        [ProducesResponseType(typeof(ServerDto), 200)]
+        [ProducesResponseType(typeof(ServerDto), 201)]
         [ProducesResponseType(500)]
         public IActionResult CreateServer([FromQuery] Guid credentialId, CreateServerDto createServer)
         {
@@ -99,10 +100,65 @@ namespace Controllers
             try
             {
                 var createdServer = _serverRepository.CreateServer(serverMap);
-                return Ok(_mapper.Map<ServerDto>(createdServer));
+                return StatusCode(201, _mapper.Map<ServerDto>(createdServer));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+        
+        [HttpPut, Route("")]
+        [ProducesResponseType(typeof(ServerDto), 202)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult UpdateServer([FromQuery] Guid serverId, UpdateServerDto updateServer)
+        {
+            if(updateServer == null)
+            {
+                return BadRequest(ModelState);
+            }
+                
+            if (serverId != updateServer.Id)
+            {
+                ModelState.AddModelError("", "Id mismatch");
+                return BadRequest(ModelState);
+            }
+                
+            if(!_serverRepository.IsServerExist(serverId))
+            {
+                return NotFound();
+            }
+
+            var serverMap = _mapper.Map<Server>(updateServer);
+
+            try
+            {
+                var updatedServer = _serverRepository.UpdateServer(serverMap);
+                return StatusCode(202, _mapper.Map<ServerDto>(updatedServer));
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete, Route("")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult DeleteServer([FromQuery] Guid serverId)
+        {
+            if (!_serverRepository.IsServerExist(serverId))
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                _serverRepository.DeleteServer(_serverRepository.GetServerById(serverId));
+                return StatusCode(202);
+            } catch (Exception ex)
+            {
+                return BadRequest();
             }
         }
     }

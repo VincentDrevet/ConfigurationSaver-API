@@ -75,7 +75,7 @@ namespace Controllers
         }
 
         [HttpPost, Route("")]
-        [ProducesResponseType(typeof(CredentialDto), 200)]
+        [ProducesResponseType(typeof(CredentialDto), 201)]
         [ProducesResponseType(500)]
         public IActionResult CreateCredential(CreateCredentialDto createCredential)
         {
@@ -87,7 +87,7 @@ namespace Controllers
             try
             {
                 var createdCredential = _credentialRepository.CreateCredential(_mapper.Map<Credential>(createCredential));
-                return Ok(_mapper.Map<CredentialDto>(createdCredential));
+                return StatusCode(201, _mapper.Map<CredentialDto>(createdCredential));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -96,7 +96,7 @@ namespace Controllers
         }
 
         [HttpPut, Route("")]
-        [ProducesResponseType(typeof(CredentialDto), 200)]
+        [ProducesResponseType(typeof(CredentialDto), 202)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
         public IActionResult UpdateCredential([FromQuery] Guid credentialId,UpdateCredentialDto updateCredential)
@@ -121,12 +121,34 @@ namespace Controllers
             try
             {
                 var updatedCredential = _credentialRepository.UpdateCredential(credentialMap);
-                return Ok(_mapper.Map<CredentialDto>(updatedCredential));
+                return StatusCode(202, _mapper.Map<CredentialDto>(updatedCredential));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
 
+        }
+
+        [HttpDelete, Route("")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult DeleteCredential([FromQuery] Guid credentialId)
+        {
+            if (!_credentialRepository.IsCredentialExist(credentialId))
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                _credentialRepository.DeleteCredential(_credentialRepository.GetCredentialById(credentialId));
+                return StatusCode(204);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
     }
 }

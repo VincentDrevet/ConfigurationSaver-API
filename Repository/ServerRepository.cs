@@ -38,5 +38,18 @@ namespace Repository
             _context.SaveChanges();
             return server;
         }
+
+        public Server UpdateServer(Server server)
+        {
+            _context.Update(server);
+            _context.SaveChanges();
+            return server;
+        }
+
+        public void DeleteServer(Server deleteServer)
+        {
+            _context.Remove(deleteServer);
+            _context.SaveChanges();
+        }
     }
 }

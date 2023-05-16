@@ -11,5 +11,6 @@ namespace Interfaces
         public ICollection<Server> GetServersByCredentialId(Guid id);
         public Credential CreateCredential(Credential createCredential);
         public Credential UpdateCredential(Credential updateCredential);
+        public void DeleteCredential(Credential deleteCredential);
     }
 }

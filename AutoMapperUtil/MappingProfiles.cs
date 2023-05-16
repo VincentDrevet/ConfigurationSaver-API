@@ -16,6 +16,8 @@ namespace AutoMapperUtil
             CreateMap<CreateServerDto, Server>();
             CreateMap<CreateScheduleTaskDto, ScheduleTask>();
             CreateMap<UpdateCredentialDto, Credential>();
+            CreateMap<UpdateServerDto, Server>();
+            CreateMap<UpdateScheduleTask, ScheduleTask>();
         }
     }
 }

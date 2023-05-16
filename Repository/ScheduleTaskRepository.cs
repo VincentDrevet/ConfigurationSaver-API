@@ -42,5 +42,18 @@ namespace Repository
             _context.SaveChanges();
             return createScheduleTask;
         }
+
+        public ScheduleTask UpdateScheduleTask(ScheduleTask updateScheduleTask)
+        {
+            _context.ScheduleTasks.Update(updateScheduleTask);
+            _context.SaveChanges();
+            return updateScheduleTask;
+        }
+
+        public void DeleteScheduleTask(ScheduleTask deleteScheduleTask)
+        {
+            _context.Remove(deleteScheduleTask);
+            _context.SaveChanges();
+        }
     }
 }

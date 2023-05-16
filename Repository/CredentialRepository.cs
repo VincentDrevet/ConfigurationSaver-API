@@ -45,5 +45,11 @@ namespace Repository
             _context.SaveChanges();
             return updateCredential;
         }
+
+        public void DeleteCredential(Credential deleteCredential)
+        {
+            _context.Remove(deleteCredential);
+            _context.SaveChanges();
+        }
     }
 }

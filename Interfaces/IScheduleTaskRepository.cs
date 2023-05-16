@@ -10,5 +10,7 @@ namespace Interfaces
         public bool IsScheduleTaskExist(Guid id);
         public ICollection<Server> GetServersInTask(Guid id);
         public ScheduleTask CreateScheduleTask(ScheduleTask createScheduleTask);
+        public ScheduleTask UpdateScheduleTask(ScheduleTask updateScheduleTask);
+        public void DeleteScheduleTask(ScheduleTask deleteScheduleTask);
     }
 }

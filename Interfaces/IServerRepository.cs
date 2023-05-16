@@ -8,5 +8,7 @@ namespace Interfaces
         public bool IsServerExist(Guid id);
         public Credential GetCredentialByServerId(Guid id);
         public Server CreateServer(Server server);
+        public Server UpdateServer(Server server);
+        public void DeleteServer(Server deleteServer);
     }
 }
