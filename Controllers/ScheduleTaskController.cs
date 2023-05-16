@@ -11,14 +11,21 @@ namespace Controllers
     public class ScheduleTaskController : Controller
     {
         private readonly IScheduleTaskRepository _scheduleTaskRepository;
+        private readonly IServerRepository _serverRepository;
         private readonly IMapper _mapper;
 
-        public ScheduleTaskController(IScheduleTaskRepository scheduleTaskRepository, IMapper mapper)
+        public ScheduleTaskController(IScheduleTaskRepository scheduleTaskRepository, IMapper mapper,
+            IServerRepository serverRepository)
         {
             _scheduleTaskRepository = scheduleTaskRepository;
+            _serverRepository = serverRepository;
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Return all schedule tasks registered
+        /// </summary>
+        /// <returns></returns>
         [HttpGet, Route("")]
         [ProducesResponseType(typeof(ScheduleTaskDto), 200)]
         [ProducesResponseType(500)]
@@ -34,6 +41,11 @@ namespace Controllers
 
         }
 
+        /// <summary>
+        /// Return a schedule task by it's id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet, Route("{id}")]
         [ProducesResponseType(typeof(ScheduleTaskDto), 200)]
         [ProducesResponseType(404)]
@@ -53,6 +65,11 @@ namespace Controllers
 
         }
 
+        /// <summary>
+        /// Return a list of servers which are attach to the schedule task
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet, Route("{id}/server")]
         [ProducesResponseType(typeof(ICollection<ServerDto>), 200)]
         [ProducesResponseType(404)]
@@ -71,10 +88,15 @@ namespace Controllers
                 return BadRequest();
             }
 
-            return Ok(_mapper.Map<ServerDto>(servers));
+            return Ok(_mapper.Map<ICollection<ServerDto>>(servers));
 
         }
 
+        /// <summary>
+        /// Create a new schedule task
+        /// </summary>
+        /// <param name="createScheduleTaskDto"></param>
+        /// <returns></returns>
         [HttpPost, Route("")]
         [ProducesResponseType(typeof(ScheduleTaskDto), 201)]
         [ProducesResponseType(500)]
@@ -97,6 +119,12 @@ namespace Controllers
             }
         }
 
+        /// <summary>
+        /// Update an existing schedule task
+        /// </summary>
+        /// <param name="scheduleTaskId"></param>
+        /// <param name="updateScheduleTask"></param>
+        /// <returns></returns>
         [HttpPut, Route("")]
         [ProducesResponseType(typeof(ScheduleTaskDto), 202)]
         [ProducesResponseType(404)]
@@ -131,6 +159,11 @@ namespace Controllers
             }
         }
 
+        /// <summary>
+        /// Delete an existing schedule task
+        /// </summary>
+        /// <param name="scheduleTaskId"></param>
+        /// <returns></returns>
         [HttpDelete, Route("")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -151,6 +184,66 @@ namespace Controllers
                 return BadRequest(ex);
             }
 
+        }
+
+        /// <summary>
+        /// Attach a server to a schedule task
+        /// </summary>
+        /// <param name="scheduleTaskId"></param>
+        /// <param name="serverId"></param>
+        /// <returns></returns>
+        [HttpPost, Route("{scheduleTaskId}/server/{serverId}")]
+        [ProducesResponseType(202)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult AddServerToTask(Guid scheduleTaskId, Guid serverId)
+        {
+            if(_serverRepository.IsServerExist(serverId) == false || _scheduleTaskRepository.IsScheduleTaskExist(scheduleTaskId) == false) {
+                return NotFound();
+            }
+
+            var server = _serverRepository.GetServerById(serverId);
+            var scheduleTask = _scheduleTaskRepository.GetScheduleTaskById(scheduleTaskId);
+
+            try
+            {
+                _scheduleTaskRepository.AddServerToScheduleTask(scheduleTask, server);
+                return StatusCode(202);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Remove a server from a schedule task
+        /// </summary>
+        /// <param name="scheduleTaskId"></param>
+        /// <param name="serverId"></param>
+        /// <returns></returns>
+        [HttpDelete, Route("{scheduleTaskId}/server/{serverId}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult RemoveServerFromScheduleTask(Guid scheduleTaskId, Guid serverId)
+        {
+            if (_serverRepository.IsServerExist(serverId) == false || _scheduleTaskRepository.IsScheduleTaskExist(scheduleTaskId) == false)
+            {
+                return NotFound();
+            }
+
+            var server = _serverRepository.GetServerById(serverId);
+            var scheduleTask = _scheduleTaskRepository.GetScheduleTaskById(scheduleTaskId);
+
+            try
+            {
+                _scheduleTaskRepository.RemoveServerFromScheduleTask(scheduleTask, server);
+                return StatusCode(204);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
     }
 }

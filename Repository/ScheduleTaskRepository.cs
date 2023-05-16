@@ -23,7 +23,7 @@ namespace Repository
 
         public ScheduleTask GetScheduleTaskById(Guid id)
         {
-            return _context.ScheduleTasks.Where(st => st.Id == id).First();
+            return _context.ScheduleTasks.Where(st => st.Id == id).Include(st => st.ServerScheduleTasks).First();
         }
 
         public bool IsScheduleTaskExist(Guid id)
@@ -53,6 +53,29 @@ namespace Repository
         public void DeleteScheduleTask(ScheduleTask deleteScheduleTask)
         {
             _context.Remove(deleteScheduleTask);
+            _context.SaveChanges();
+        }
+
+        public void AddServerToScheduleTask(ScheduleTask scheduleTask, Server server)
+        {
+            scheduleTask.ServerScheduleTasks.Add(new ServerScheduleTask
+            {
+                ServerId = server.Id,
+                ScheduleTaskId = scheduleTask.Id
+            });
+
+            _context.Update(scheduleTask);
+            _context.SaveChanges();
+        }
+
+        public void RemoveServerFromScheduleTask(ScheduleTask scheduleTask, Server server)
+        {
+
+            var sst = scheduleTask.ServerScheduleTasks.Where(sst => sst.ScheduleTaskId == scheduleTask.Id && sst.ServerId == server.Id).First();
+
+            scheduleTask.ServerScheduleTasks.Remove(sst);
+
+            _context.Update(scheduleTask);
             _context.SaveChanges();
         }
     }

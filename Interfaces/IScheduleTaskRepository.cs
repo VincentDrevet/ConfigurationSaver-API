@@ -12,5 +12,7 @@ namespace Interfaces
         public ScheduleTask CreateScheduleTask(ScheduleTask createScheduleTask);
         public ScheduleTask UpdateScheduleTask(ScheduleTask updateScheduleTask);
         public void DeleteScheduleTask(ScheduleTask deleteScheduleTask);
+        public void AddServerToScheduleTask(ScheduleTask scheduleTask, Server server);
+        public void RemoveServerFromScheduleTask(ScheduleTask scheduleTask, Server server);
     }
 }

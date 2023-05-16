@@ -20,6 +20,10 @@ namespace Controllers
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Return all credentials
+        /// </summary>
+        /// <returns>Return all credentials</returns>
         [HttpGet, Route("")]
         [ProducesResponseType(typeof(CredentialDto), 200)]
         public IActionResult GetCredentials() {
@@ -33,6 +37,11 @@ namespace Controllers
             return Ok(_mapper.Map<ICollection<CredentialDto>>(credentials));
         }
 
+        /// <summary>
+        /// Get a credential by it's id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>return a credential object</returns>
         [HttpGet, Route("{id}")]
         [ProducesResponseType(typeof(CredentialDto), 200)]
         [ProducesResponseType(404)]
@@ -52,6 +61,11 @@ namespace Controllers
             return Ok(credential);
         }
 
+        /// <summary>
+        /// return a list of servers which use the credential id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet, Route("{id}/server")]
         [ProducesResponseType(typeof(ICollection<ServerDto>), 200)]
         [ProducesResponseType(404)]
@@ -74,6 +88,11 @@ namespace Controllers
             return Ok(_mapper.Map<ICollection<ServerDto>>(servers));
         }
 
+        /// <summary>
+        /// Create a new credential
+        /// </summary>
+        /// <param name="createCredential"></param>
+        /// <returns></returns>
         [HttpPost, Route("")]
         [ProducesResponseType(typeof(CredentialDto), 201)]
         [ProducesResponseType(500)]
@@ -95,6 +114,12 @@ namespace Controllers
 
         }
 
+        /// <summary>
+        /// Update an existing credential
+        /// </summary>
+        /// <param name="credentialId"></param>
+        /// <param name="updateCredential"></param>
+        /// <returns></returns>
         [HttpPut, Route("")]
         [ProducesResponseType(typeof(CredentialDto), 202)]
         [ProducesResponseType(404)]
@@ -129,6 +154,11 @@ namespace Controllers
 
         }
 
+        /// <summary>
+        /// Delete an existing credential
+        /// </summary>
+        /// <param name="credentialId"></param>
+        /// <returns></returns>
         [HttpDelete, Route("")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
