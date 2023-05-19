@@ -2,6 +2,7 @@ using AutoMapper;
 using Models;
 using Dto;
 using ConfigurationSaver_API.Dto;
+using ConfigurationSaver_API.Models;
 
 namespace AutoMapperUtil
 {
@@ -10,13 +11,14 @@ namespace AutoMapperUtil
         public MappingProfiles()
         {
             CreateMap<Credential, CredentialDto>();
-            CreateMap<Server, ServerDto>();
+            CreateMap<Device, DeviceDto>();
             CreateMap<ScheduleTask, ScheduleTaskDto>();
             CreateMap<CreateCredentialDto, Credential>();
-            CreateMap<CreateServerDto, Server>();
+            CreateMap<CreateDeviceDto, EsxiServer>();
+            CreateMap<CreateDeviceDto, Device>();
             CreateMap<CreateScheduleTaskDto, ScheduleTask>();
             CreateMap<UpdateCredentialDto, Credential>();
-            CreateMap<UpdateServerDto, Server>();
+            CreateMap<UpdateDeviceDto, Device>();
             CreateMap<UpdateScheduleTask, ScheduleTask>();
         }
     }

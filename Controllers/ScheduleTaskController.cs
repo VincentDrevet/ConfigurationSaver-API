@@ -4,6 +4,9 @@ using AutoMapper;
 using Interfaces;
 using ConfigurationSaver_API.Dto;
 using Models;
+using Hangfire;
+using ConfigurationSaver_API.Utils;
+using Hangfire.Storage;
 
 namespace Controllers
 {
@@ -11,15 +14,17 @@ namespace Controllers
     public class ScheduleTaskController : Controller
     {
         private readonly IScheduleTaskRepository _scheduleTaskRepository;
-        private readonly IServerRepository _serverRepository;
+        private readonly IDeviceRepository _deviceRepository;
         private readonly IMapper _mapper;
+        private readonly ScheduleTaskHelper _scheduleTaskHelper;
 
         public ScheduleTaskController(IScheduleTaskRepository scheduleTaskRepository, IMapper mapper,
-            IServerRepository serverRepository)
+            IDeviceRepository deviceRepository)
         {
             _scheduleTaskRepository = scheduleTaskRepository;
-            _serverRepository = serverRepository;
+            _deviceRepository = deviceRepository;
             _mapper = mapper;
+            _scheduleTaskHelper = new ScheduleTaskHelper(scheduleTaskRepository);
         }
 
         /// <summary>
@@ -66,29 +71,29 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Return a list of servers which are attach to the schedule task
+        /// Return a list of Devices which are attach to the schedule task
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet, Route("{id}/server")]
-        [ProducesResponseType(typeof(ICollection<ServerDto>), 200)]
+        [HttpGet, Route("{id}/device")]
+        [ProducesResponseType(typeof(ICollection<DeviceDto>), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult GetServersManagedByTaskId(Guid id)
+        public IActionResult GetDevicesManagedByTaskId(Guid id)
         {
             if(!_scheduleTaskRepository.IsScheduleTaskExist(id))
             {
                 return NotFound();
             }
 
-            var servers = _scheduleTaskRepository.GetServersInTask(id);
+            var Devices = _scheduleTaskRepository.GetDevicesInTask(id);
 
             if(!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            return Ok(_mapper.Map<ICollection<ServerDto>>(servers));
+            return Ok(_mapper.Map<ICollection<DeviceDto>>(Devices));
 
         }
 
@@ -112,6 +117,9 @@ namespace Controllers
             try
             {
                 var createdScheduleTask = _scheduleTaskRepository.CreateScheduleTask(scheduleTaskMap);
+
+                RecurringJob.AddOrUpdate(scheduleTaskMap.Id.ToString(), () => _scheduleTaskHelper.RunScheduleTask(createdScheduleTask.Id), Cron.Minutely);
+
                 return StatusCode(201, _mapper.Map<ScheduleTaskDto>(createdScheduleTask));
             } catch (Exception ex)
             {
@@ -187,27 +195,27 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Attach a server to a schedule task
+        /// Attach a device to a schedule task
         /// </summary>
         /// <param name="scheduleTaskId"></param>
-        /// <param name="serverId"></param>
+        /// <param name="deviceId"></param>
         /// <returns></returns>
-        [HttpPost, Route("{scheduleTaskId}/server/{serverId}")]
+        [HttpPost, Route("{scheduleTaskId}/device/{deviceId}")]
         [ProducesResponseType(202)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult AddServerToTask(Guid scheduleTaskId, Guid serverId)
+        public IActionResult AddDeviceToTask(Guid scheduleTaskId, Guid deviceId)
         {
-            if(_serverRepository.IsServerExist(serverId) == false || _scheduleTaskRepository.IsScheduleTaskExist(scheduleTaskId) == false) {
+            if(_deviceRepository.IsDeviceExist(deviceId) == false || _scheduleTaskRepository.IsScheduleTaskExist(scheduleTaskId) == false) {
                 return NotFound();
             }
 
-            var server = _serverRepository.GetServerById(serverId);
+            var device = _deviceRepository.GetDeviceById(deviceId);
             var scheduleTask = _scheduleTaskRepository.GetScheduleTaskById(scheduleTaskId);
 
             try
             {
-                _scheduleTaskRepository.AddServerToScheduleTask(scheduleTask, server);
+                _scheduleTaskRepository.AddDeviceToScheduleTask(scheduleTask, device);
                 return StatusCode(202);
             } catch (Exception ex)
             {
@@ -216,34 +224,90 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Remove a server from a schedule task
+        /// Remove a device from a schedule task
         /// </summary>
         /// <param name="scheduleTaskId"></param>
-        /// <param name="serverId"></param>
+        /// <param name="deviceId"></param>
         /// <returns></returns>
-        [HttpDelete, Route("{scheduleTaskId}/server/{serverId}")]
+        [HttpDelete, Route("{scheduleTaskId}/device/{deviceId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult RemoveServerFromScheduleTask(Guid scheduleTaskId, Guid serverId)
+        public IActionResult RemoveDeviceFromScheduleTask(Guid scheduleTaskId, Guid deviceId)
         {
-            if (_serverRepository.IsServerExist(serverId) == false || _scheduleTaskRepository.IsScheduleTaskExist(scheduleTaskId) == false)
+            if (_deviceRepository.IsDeviceExist(deviceId) == false || _scheduleTaskRepository.IsScheduleTaskExist(scheduleTaskId) == false)
             {
                 return NotFound();
             }
 
-            var server = _serverRepository.GetServerById(serverId);
+            var device = _deviceRepository.GetDeviceById(deviceId);
             var scheduleTask = _scheduleTaskRepository.GetScheduleTaskById(scheduleTaskId);
 
             try
             {
-                _scheduleTaskRepository.RemoveServerFromScheduleTask(scheduleTask, server);
+                _scheduleTaskRepository.RemoveDeviceFromScheduleTask(scheduleTask, device);
                 return StatusCode(204);
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
             
+        }
+
+        /// <summary>
+        /// Start a backup schedule task immediately
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost, Route("{id}/run")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult RunScheduleTask(Guid id)
+        {
+            if(!_scheduleTaskRepository.IsScheduleTaskExist(id))
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                _scheduleTaskHelper.RunScheduleTask(id);
+                return Ok();
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet, Route("{id}/status")]
+        [ProducesResponseType(typeof(JobStatusDto), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public IActionResult GetStatusScheduleTask(Guid id)
+        {
+            if (!_scheduleTaskRepository.IsScheduleTaskExist(id))
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var jobs = JobStorage.Current.GetConnection().GetRecurringJobs();
+                var job = jobs.Where(j => j.Id == id.ToString()).FirstOrDefault();
+
+                return Ok(new JobStatusDto
+                {
+                    CreatedAt = job.CreatedAt,
+                    LastRunTime = job.LastExecution,
+                    LastJobState = job.LastJobState,
+                    NextRunTime = job.NextExecution
+                });
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

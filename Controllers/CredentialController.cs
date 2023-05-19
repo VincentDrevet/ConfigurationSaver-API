@@ -67,7 +67,7 @@ namespace Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet, Route("{id}/server")]
-        [ProducesResponseType(typeof(ICollection<ServerDto>), 200)]
+        [ProducesResponseType(typeof(ICollection<DeviceDto>), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
         public IActionResult GetServersByCredentialId(Guid id)
@@ -78,14 +78,14 @@ namespace Controllers
                 return NotFound();
             }
 
-            var servers = _credentialRepository.GetServersByCredentialId(id);
+            var servers = _credentialRepository.GetDevicesByCredentialId(id);
 
             if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            return Ok(_mapper.Map<ICollection<ServerDto>>(servers));
+            return Ok(_mapper.Map<ICollection<DeviceDto>>(servers));
         }
 
         /// <summary>

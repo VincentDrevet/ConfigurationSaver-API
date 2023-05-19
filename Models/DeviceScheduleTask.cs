@@ -1,10 +1,10 @@
 namespace Models
 {
-    public class ServerScheduleTask
+    public class DeviceScheduleTask
     {
-        public Guid ServerId { get; set; }
+        public Guid DeviceId { get; set; }
         public Guid ScheduleTaskId { get; set; }
-        public Server Server { get; set; }
+        public Device Device { get; set; }
         public ScheduleTask ScheduleTask { get; set; }
     }
 }

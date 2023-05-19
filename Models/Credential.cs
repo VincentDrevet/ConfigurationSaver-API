@@ -6,6 +6,6 @@ namespace Models
         public String Name { get; set; }
         public String Login { get; set; }
         public String Password { get; set; }
-        public ICollection<Server> Servers { get; set; }
+        public ICollection<Device> Devices { get; set; }
     }
 }

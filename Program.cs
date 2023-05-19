@@ -3,12 +3,22 @@ using Interfaces;
 using Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using JsonSubTypes;
+using Models;
+using ConfigurationSaver_API.Utils;
+using ConfigurationSaver_API.Models;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+{
+    options.SerializerSettings.Converters.Add(
+        JsonSubtypesConverterBuilder.Of(typeof(Device), CommonData.DeviceDiscriminator)
+        .RegisterSubtype(typeof(EsxiServer), DeviceTypeEnum.EsxiServer).SerializeDiscriminatorProperty().Build());
+});
 builder.Services.AddDbContext<DataContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
 });
@@ -31,16 +41,30 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
+    options.UseAllOfToExtendReferenceSchemas();
+    options.UseAllOfForInheritance();
+    options.UseOneOfForPolymorphism();
+    options.SelectDiscriminatorNameUsing(type =>
+    {
+        return type.Name switch
+        {
+            nameof(Device) => CommonData.DeviceDiscriminator,
+            _ => null
+        };
+    });
+
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetSection("HangFireDb").Value));
+builder.Services.AddHangfireServer();
 
 /*
     Add Repository services
 */
 builder.Services.AddScoped<ICredentialRepository, CredentialRepository>();
-builder.Services.AddScoped<IServerRepository, ServerRepository>();
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 builder.Services.AddScoped<IScheduleTaskRepository, ScheduleTaskRepository>();
 
 var app = builder.Build();
@@ -57,5 +81,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseHangfireDashboard("/hf-dashboard");
 
 app.Run();

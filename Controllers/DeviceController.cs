@@ -5,38 +5,39 @@ using Dto;
 using ConfigurationSaver_API.Dto;
 using Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using ConfigurationSaver_API.Models;
 
 namespace Controllers
 {
-    [ApiController, Route("api/v1/server")]
-    public class ServerController : Controller
+    [ApiController, Route("api/v1/device")]
+    public class DeviceController : Controller
     {
-        private readonly IServerRepository _serverRepository;
+        private readonly IDeviceRepository _deviceRepository;
         private readonly ICredentialRepository _credentialRepository;
         private readonly IMapper _mapper;
 
-        public ServerController(IServerRepository serverRepository, IMapper mapper, ICredentialRepository credentialRepository)
+        public DeviceController(IDeviceRepository deviceRepository, IMapper mapper, ICredentialRepository credentialRepository)
         {
-            _serverRepository = serverRepository;
+            _deviceRepository = deviceRepository;
             _credentialRepository = credentialRepository;
             _mapper = mapper;
         }
 
         /// <summary>
-        /// Return all servers registered
+        /// Return all devices registered
         /// </summary>
         /// <returns></returns>
         [HttpGet, Route("")]
-        [ProducesResponseType(typeof(ICollection<ServerDto>), 200)]
+        [ProducesResponseType(typeof(ICollection<DeviceDto>), 200)]
         [ProducesResponseType(500)]
-        public IActionResult GetAllServers() {
-            var servers = _serverRepository.GetAllServers();
+        public IActionResult GetAllDevices() {
+            var devices = _deviceRepository.GetAllDevices();
 
             if(!ModelState.IsValid) {
                 return BadRequest();
             }
 
-            return Ok(_mapper.Map<ICollection<ServerDto>>(servers));
+            return Ok(_mapper.Map<ICollection<DeviceDto>>(devices));
         }
 
         /// <summary>
@@ -45,26 +46,26 @@ namespace Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet, Route("{id}")]
-        [ProducesResponseType(typeof(ServerDto), 200)]
+        [ProducesResponseType(typeof(DeviceDto), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult GetServerById(Guid id) {
+        public IActionResult GetDeviceById(Guid id) {
 
-            if(!_serverRepository.IsServerExist(id)) {
+            if(!_deviceRepository.IsDeviceExist(id)) {
                 return NotFound();
             }
 
-            var server = _serverRepository.GetServerById(id);
+            var device = _deviceRepository.GetDeviceById(id);
 
             if(!ModelState.IsValid) {
                 return BadRequest();
             }
 
-            return Ok(_mapper.Map<ServerDto>(server));
+            return Ok(_mapper.Map<DeviceDto>(device));
         }
 
         /// <summary>
-        /// Get credential attach to the server
+        /// Get credential attach to the device
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -72,14 +73,14 @@ namespace Controllers
         [ProducesResponseType(typeof(CredentialDto), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult GetCredentialByServerId(Guid id) {
+        public IActionResult GetCredentialByDeviceId(Guid id) {
 
-            if(!_serverRepository.IsServerExist(id))
+            if(!_deviceRepository.IsDeviceExist(id))
             {
                 return NotFound();
             }
 
-            var credential = _serverRepository.GetCredentialByServerId(id);
+            var credential = _deviceRepository.GetCredentialByDeviceId(id);
 
             if(!ModelState.IsValid)
             {
@@ -90,17 +91,17 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Create a new server
+        /// Create a new device
         /// </summary>
         /// <param name="credentialId"></param>
-        /// <param name="createServer"></param>
+        /// <param name="createDevice"></param>
         /// <returns></returns>
         [HttpPost, Route("")]
-        [ProducesResponseType(typeof(ServerDto), 201)]
+        [ProducesResponseType(typeof(DeviceDto), 201)]
         [ProducesResponseType(500)]
-        public IActionResult CreateServer([FromQuery] Guid credentialId, CreateServerDto createServer)
+        public IActionResult CreateDevice([FromQuery] Guid credentialId, CreateDeviceDto createDevice)
         {
-            if(createServer == null)
+            if(createDevice == null)
             {
                 return BadRequest(ModelState);
             }
@@ -113,54 +114,52 @@ namespace Controllers
 
             var credential = _credentialRepository.GetCredentialById(credentialId);
 
-            var serverMap = _mapper.Map<Server>(createServer);
-
-            serverMap.Credential = credential;
-
-            try
+            switch (createDevice.Type)
             {
-                var createdServer = _serverRepository.CreateServer(serverMap);
-                return StatusCode(201, _mapper.Map<ServerDto>(createdServer));
-            } catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+                case DeviceTypeEnum.EsxiServer:
+                    var deviceMap = _mapper.Map<EsxiServer>(createDevice);
+                    deviceMap.Credential = credential;
+                    return SaveDevice(deviceMap);
+                default:
+                    return BadRequest();
+                    
+            }        
         }
         
         /// <summary>
-        /// Update an existing server
+        /// Update an existing device
         /// </summary>
-        /// <param name="serverId"></param>
-        /// <param name="updateServer"></param>
+        /// <param name="deviceId"></param>
+        /// <param name="updateDevice"></param>
         /// <returns></returns>
         [HttpPut, Route("")]
-        [ProducesResponseType(typeof(ServerDto), 202)]
+        [ProducesResponseType(typeof(DeviceDto), 202)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult UpdateServer([FromQuery] Guid serverId, UpdateServerDto updateServer)
+        public IActionResult UpdateDevice([FromQuery] Guid deviceId, UpdateDeviceDto updateDevice)
         {
-            if(updateServer == null)
+            if(updateDevice == null)
             {
                 return BadRequest(ModelState);
             }
                 
-            if (serverId != updateServer.Id)
+            if (deviceId != updateDevice.Id)
             {
                 ModelState.AddModelError("", "Id mismatch");
                 return BadRequest(ModelState);
             }
                 
-            if(!_serverRepository.IsServerExist(serverId))
+            if(!_deviceRepository.IsDeviceExist(deviceId))
             {
                 return NotFound();
             }
 
-            var serverMap = _mapper.Map<Server>(updateServer);
+            var deviceMap = _mapper.Map<Device>(updateDevice);
 
             try
             {
-                var updatedServer = _serverRepository.UpdateServer(serverMap);
-                return StatusCode(202, _mapper.Map<ServerDto>(updatedServer));
+                var updatedDevice = _deviceRepository.UpdateDevice(deviceMap);
+                return StatusCode(202, _mapper.Map<DeviceDto>(updatedDevice));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -168,28 +167,41 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Delete an existing server
+        /// Delete an existing device
         /// </summary>
-        /// <param name="serverId"></param>
+        /// <param name="deviceId"></param>
         /// <returns></returns>
         [HttpDelete, Route("")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public IActionResult DeleteServer([FromQuery] Guid serverId)
+        public IActionResult DeleteDevice([FromQuery] Guid deviceId)
         {
-            if (!_serverRepository.IsServerExist(serverId))
+            if (!_deviceRepository.IsDeviceExist(deviceId))
             {
                 return NotFound();
             }
 
             try
             {
-                _serverRepository.DeleteServer(_serverRepository.GetServerById(serverId));
+                _deviceRepository.DeleteDevice(_deviceRepository.GetDeviceById(deviceId));
                 return StatusCode(202);
             } catch (Exception ex)
             {
                 return BadRequest();
+            }
+        }
+
+        private IActionResult SaveDevice(Device device)
+        {
+            try
+            {
+                var createdDevice = _deviceRepository.CreateDevice(device);
+                return StatusCode(201, _mapper.Map<DeviceDto>(createdDevice));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

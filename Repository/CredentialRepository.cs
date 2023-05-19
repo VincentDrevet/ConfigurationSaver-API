@@ -26,16 +26,23 @@ namespace Repository
         {
             return _context.Credentials.Any(c => c.Id == id);
         }
-        public ICollection<Server> GetServersByCredentialId(Guid id)
+        public ICollection<Device> GetDevicesByCredentialId(Guid id)
         {
-            return _context.Credentials.Where(c => c.Id == id).Select(c => c.Servers).First();
+            return _context.Credentials.Where(c => c.Id == id).Select(c => c.Devices).First();
         }
 
         public Credential CreateCredential(Credential createCredential)
         {
-            _context.Credentials.Add(createCredential);
-            _context.SaveChanges();
-            return createCredential;
+            try
+            {
+                _context.Credentials.Add(createCredential);
+                _context.SaveChanges();
+                return createCredential;
+            } catch (Exception ex)
+            {
+                throw ex;
+            }
+            
 
         }
 

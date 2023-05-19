@@ -21,9 +21,14 @@ namespace Repository
             return _context.ScheduleTasks.OrderBy(st => st.Name).ToList();
         }
 
+        public ICollection<ScheduleTask> GetAllScheduleTaskWithRelationShip()
+        {
+            return _context.ScheduleTasks.Include(st => st.DeviceScheduleTasks).ThenInclude(dst => dst.Device).ThenInclude(d => d.Credential).ToList();
+        }
+
         public ScheduleTask GetScheduleTaskById(Guid id)
         {
-            return _context.ScheduleTasks.Where(st => st.Id == id).Include(st => st.ServerScheduleTasks).First();
+            return _context.ScheduleTasks.Where(st => st.Id == id).Include(st => st.DeviceScheduleTasks).First();
         }
 
         public bool IsScheduleTaskExist(Guid id)
@@ -31,9 +36,9 @@ namespace Repository
             return _context.ScheduleTasks.Any(st => st.Id == id);
         }
 
-        public ICollection<Server> GetServersInTask(Guid id)
+        public ICollection<Device> GetDevicesInTask(Guid id)
         {
-            return _context.ServerScheduleTasks.Where(sst => sst.ScheduleTaskId == id).Select(sst => sst.Server).ToList();
+            return _context.DeviceScheduleTasks.Where(sst => sst.ScheduleTaskId == id).Select(sst => sst.Device).ToList();
         }
 
         public ScheduleTask CreateScheduleTask(ScheduleTask createScheduleTask)
@@ -56,11 +61,11 @@ namespace Repository
             _context.SaveChanges();
         }
 
-        public void AddServerToScheduleTask(ScheduleTask scheduleTask, Server server)
+        public void AddDeviceToScheduleTask(ScheduleTask scheduleTask, Device device)
         {
-            scheduleTask.ServerScheduleTasks.Add(new ServerScheduleTask
+            scheduleTask.DeviceScheduleTasks.Add(new DeviceScheduleTask
             {
-                ServerId = server.Id,
+                DeviceId = device.Id,
                 ScheduleTaskId = scheduleTask.Id
             });
 
@@ -68,15 +73,20 @@ namespace Repository
             _context.SaveChanges();
         }
 
-        public void RemoveServerFromScheduleTask(ScheduleTask scheduleTask, Server server)
+        public void RemoveDeviceFromScheduleTask(ScheduleTask scheduleTask, Device device)
         {
 
-            var sst = scheduleTask.ServerScheduleTasks.Where(sst => sst.ScheduleTaskId == scheduleTask.Id && sst.ServerId == server.Id).First();
+            var sst = scheduleTask.DeviceScheduleTasks.Where(sst => sst.ScheduleTaskId == scheduleTask.Id && sst.DeviceId == device.Id).First();
 
-            scheduleTask.ServerScheduleTasks.Remove(sst);
+            scheduleTask.DeviceScheduleTasks.Remove(sst);
 
             _context.Update(scheduleTask);
             _context.SaveChanges();
+        }
+
+        public ScheduleTask GetScheduleTaskByIdWithRelationShip(Guid id)
+        {
+            return _context.ScheduleTasks.Where(st => st.Id == id).Include(st => st.DeviceScheduleTasks).ThenInclude(sst => sst.Device).ThenInclude(s => s.Credential).First();
         }
     }
 }

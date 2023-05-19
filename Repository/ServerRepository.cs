@@ -4,51 +4,51 @@ using Data;
 
 namespace Repository
 {
-    public class ServerRepository : IServerRepository
+    public class DeviceRepository : IDeviceRepository
     {
         private readonly DataContext _context;
-        public ServerRepository(DataContext context)
+        public DeviceRepository(DataContext context)
         {
             _context = context;
         }
 
-        public ICollection<Server> GetAllServers()
+        public ICollection<Device> GetAllDevices()
         {
-            return _context.Servers.OrderBy(s => s.Name).ToList();
+            return _context.Devices.OrderBy(s => s.Name).ToList();
         }
 
-        public Server GetServerById(Guid id)
+        public Device GetDeviceById(Guid id)
         {
-            return _context.Servers.Where(s => s.Id == id).First();
+            return _context.Devices.Where(s => s.Id == id).First();
         }
 
-        public bool IsServerExist(Guid id)
+        public bool IsDeviceExist(Guid id)
         {
-            return _context.Servers.Any(s => s.Id == id);
+            return _context.Devices.Any(s => s.Id == id);
         }
 
-        public Credential GetCredentialByServerId(Guid id)
+        public Credential GetCredentialByDeviceId(Guid id)
         {
-            return _context.Servers.Where(s => s.Id == id).Select(s => s.Credential).First();
+            return _context.Devices.Where(s => s.Id == id).Select(s => s.Credential).First();
         }
 
-        public Server CreateServer(Server server)
+        public Device CreateDevice(Device device)
         {
-            _context.Servers.Add(server);
+            _context.Devices.Add(device);
             _context.SaveChanges();
-            return server;
+            return device;
         }
 
-        public Server UpdateServer(Server server)
+        public Device UpdateDevice(Device device)
         {
-            _context.Update(server);
+            _context.Update(device);
             _context.SaveChanges();
-            return server;
+            return device;
         }
 
-        public void DeleteServer(Server deleteServer)
+        public void DeleteDevice(Device deleteDevice)
         {
-            _context.Remove(deleteServer);
+            _context.Remove(deleteDevice);
             _context.SaveChanges();
         }
     }

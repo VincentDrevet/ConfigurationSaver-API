@@ -9,6 +9,6 @@ namespace Models
         public int Hour { get; set; }
         public int Minute { get; set; }
         public int Second { get; set; }
-        public ICollection<ServerScheduleTask> ServerScheduleTasks { get; set; }
+        public ICollection<DeviceScheduleTask> DeviceScheduleTasks { get; set; }
     }
 }
