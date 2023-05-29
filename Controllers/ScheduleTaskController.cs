@@ -281,6 +281,11 @@ namespace Controllers
             }
         }
 
+        /// <summary>
+        /// Return status of a schedule task
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet, Route("{id}/status")]
         [ProducesResponseType(typeof(JobStatusDto), 200)]
         [ProducesResponseType(404)]
@@ -305,6 +310,39 @@ namespace Controllers
                     NextRunTime = job.NextExecution
                 });
             } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// Return status of all tasks
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet, Route("status")]
+        [ProducesResponseType(typeof(JobStatusDto), 200)]
+        [ProducesResponseType(500)]
+        public IActionResult GetStatusAllScheduleTask()
+        {
+            var jobsdto = new List<JobStatusDto>();
+            try
+            {
+                var jobs = JobStorage.Current.GetConnection().GetRecurringJobs();
+                foreach(var job in jobs)
+                {
+                    jobsdto.Add(new JobStatusDto
+                    {
+                        Id = job.Id,
+                        NextRunTime=job.NextExecution,
+                        LastJobState = job.LastJobState,
+                        LastRunTime = job.LastExecution,
+                        CreatedAt = job.CreatedAt
+                    });
+                }
+                return Ok(jobsdto);
+            }
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
